@@ -1,29 +1,22 @@
-# Mijoty V1
+# Mijoty V1.1
 
-Application mobile Expo / React Native / TypeScript centrée sur le pilotage du budget courses du foyer.
+V1.1 connectée à Supabase.
 
-## Fonctionnel dans cette V1
-- Navigation : Accueil / Repas / Stock / Courses / Plus
-- Dashboard budget avec dépenses, restant, prévision et indicateurs semaine
-- Planning repas avec portions, kcal/portion et coût/portion
-- Stock avec emplacement, quantité, péremption et stock faible
-- Liste de courses interactive avec panier estimé
-- Paramètres foyer / préférences / portions / nutrition
-- Client Supabase prêt à configurer
-- Schéma PostgreSQL Supabase + RLS par foyer
-- Mode démonstration sans Supabase pour visualiser immédiatement l'UI
+Fonctions actives :
+- authentification e-mail / mot de passe ;
+- création automatique d'un foyer pour un nouvel utilisateur ;
+- budget réel et ajout de dépenses ;
+- stock réel avec ajout/suppression ;
+- liste de courses réelle, ajout et coche ;
+- recettes réelles et planning de 7 dîners ;
+- affichage du foyer et déconnexion.
 
-## Démarrer
-1. Installer Node.js LTS.
-2. Dans ce dossier : `npm install`
-3. Copier `.env.example` vers `.env`.
-4. Renseigner `EXPO_PUBLIC_SUPABASE_URL` et `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
-5. Dans Supabase > SQL Editor, exécuter `sql/schema.sql`.
-6. Lancer : `npm start`
-7. Scanner le QR code avec Expo Go, ou ouvrir Android/iOS/Web.
+## Vercel
+Variables d'environnement requises :
+- `EXPO_PUBLIC_SUPABASE_URL`
+- `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 
-## Important
-Cette V1 montre les écrans et pose le modèle de données. Les écrans utilisent encore des données de démonstration. La prochaine itération doit brancher les CRUD Supabase, puis ajouter l'authentification et l'onboarding foyer.
+Build command : `npm run build:web`
+Output directory : `dist`
 
-## Sécurité
-Les données métier sont rattachées à `household_id`. Les policies RLS limitent l'accès aux membres du foyer. Ne jamais intégrer une `service_role` key dans l'application mobile.
+Le schéma SQL V1 existant suffit : aucune migration supplémentaire n'est nécessaire.
