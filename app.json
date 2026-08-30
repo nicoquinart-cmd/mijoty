@@ -3,13 +3,32 @@
     "name": "Mijoty",
     "slug": "mijoty",
     "scheme": "mijoty",
-    "version": "1.0.0",
+    "version": "1.4.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "plugins": ["expo-router"],
-    "experiments": {"typedRoutes": true},
-    "ios": {"supportsTablet": true},
-    "android": {"adaptiveIcon": {"backgroundColor": "#FFF9F2"}},
-    "web": {"bundler": "metro"}
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Mijoty utilise vos photos pour lire un article ou un ticket de caisse.",
+          "cameraPermission": "Mijoty utilise la caméra pour photographier un article ou un ticket de caisse."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FFF9F2"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    }
   }
 }

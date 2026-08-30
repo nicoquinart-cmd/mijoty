@@ -1,35 +1,33 @@
-# Mijoty V1.3
+# Mijoty V1.4
 
-V1.3 ajoute les **propositions automatiques de courses à valider**.
+V1.4 ajoute l'entrée de stock par photo, tout en conservant la validation humaine avant écriture dans Supabase.
 
 ## Nouveautés
 
-- Analyse des recettes planifiées sur les 14 prochains jours.
-- Comparaison des quantités nécessaires avec le stock du foyer.
-- Calcul de la quantité manquante par ingrédient.
-- Création automatique d'une proposition dans l'onglet **Courses**.
-- Une proposition est séparée de la vraie liste tant que l'utilisateur n'a pas choisi :
-  - **Accepter** : l'article rejoint la liste de courses.
-  - **Refuser** : l'article est écarté et ne revient pas au prochain recalcul de la même liste.
-- Bouton **Actualiser les propositions** pour relancer l'analyse.
-- Les articles ajoutés manuellement restent directement validés.
+### Photo d'un article
+- prise de photo ou import depuis la photothèque ;
+- tentative de détection du code-barres ;
+- OCR de l'étiquette pour préremplir le nom ;
+- si le code-barres existe déjà dans `products`, le nom catalogue est utilisé ;
+- correction du nom, de la quantité et de l'unité avant validation ;
+- aucune création automatique sans validation.
 
-## Mise à jour Supabase obligatoire
+### Photo d'un ticket de caisse
+- prise de photo ou import ;
+- OCR exécuté dans le navigateur ;
+- extraction de lignes ressemblant à des produits ;
+- écran de contrôle permettant de modifier ou retirer chaque ligne ;
+- ajout groupé au stock après validation.
 
-Avant de publier cette version, exécuter dans Supabase SQL Editor :
+## Technique
+- `expo-image-picker` : caméra / photothèque ;
+- `tesseract.js` : OCR français dans le navigateur ;
+- `@zxing/browser` : lecture de codes-barres ;
+- aucune clé d'IA/OCR tierce nécessaire ;
+- aucune migration SQL nécessaire pour cette version.
 
-`sql/v1.3_shopping_suggestions.sql`
+## Limites connues
+L'OCR d'un ticket dépend fortement de la qualité de la photo et de la mise en page du magasin. Le système est volontairement conçu comme une **pré-saisie à valider**, et non comme un ajout automatique au stock. La reconnaissance d'un emballage sans code-barres repose sur le texte visible sur la photo.
 
-Cette migration ajoute à `shopping_list_items` :
-
-- `proposal_status`
-- `source_key`
-- `source_label`
-
-Les anciens articles sont conservés comme articles validés.
-
-## Logique de calcul
-
-Mijoty additionne les besoins des recettes planifiées en tenant compte du nombre de portions, puis soustrait les quantités disponibles dans `inventory_items`. Les articles déjà validés dans la liste de courses sont également pris en compte pour éviter les doublons.
-
-Mijoty rapproche les unités courantes et convertit automatiquement **g ↔ kg** ainsi que **ml ↔ l** pour comparer correctement le besoin de la recette au stock. Les unités de type pièce/unité sont aussi normalisées.
+## Déploiement
+Remplacer les fichiers du dépôt GitHub par ceux de cette version et laisser Vercel redéployer. Les variables Supabase existantes restent inchangées.
