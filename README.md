@@ -1,27 +1,35 @@
-# Mijoty V1.2
+# Mijoty V1.3
 
-V1.2 connectée à Supabase avec recettes détaillées.
+V1.3 ajoute les **propositions automatiques de courses à valider**.
 
-## Nouveautés V1.2
-- création d'une recette avec ses ingrédients, quantités et unités ;
-- ajout/suppression d'ingrédients sur une recette existante ;
-- création des étapes de préparation dans l'ordre ;
-- durée facultative par étape ;
-- affichage détaillé d'une recette ;
-- mode cuisine « pas à pas » avec étape précédente / suivante ;
-- ingrédients et étapes stockés dans Supabase.
+## Nouveautés
 
-## Important avant déploiement
-Dans Supabase > SQL Editor, exécuter une fois :
+- Analyse des recettes planifiées sur les 14 prochains jours.
+- Comparaison des quantités nécessaires avec le stock du foyer.
+- Calcul de la quantité manquante par ingrédient.
+- Création automatique d'une proposition dans l'onglet **Courses**.
+- Une proposition est séparée de la vraie liste tant que l'utilisateur n'a pas choisi :
+  - **Accepter** : l'article rejoint la liste de courses.
+  - **Refuser** : l'article est écarté et ne revient pas au prochain recalcul de la même liste.
+- Bouton **Actualiser les propositions** pour relancer l'analyse.
+- Les articles ajoutés manuellement restent directement validés.
 
-`sql/v1.2_recipe_details.sql`
+## Mise à jour Supabase obligatoire
 
-Cette migration crée `recipe_steps` et ajoute les règles RLS nécessaires à `recipe_ingredients` et `recipe_steps`.
+Avant de publier cette version, exécuter dans Supabase SQL Editor :
 
-## Vercel
-Variables d'environnement requises :
-- `EXPO_PUBLIC_SUPABASE_URL`
-- `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+`sql/v1.3_shopping_suggestions.sql`
 
-Build command : `npm run build:web`
-Output directory : `dist`
+Cette migration ajoute à `shopping_list_items` :
+
+- `proposal_status`
+- `source_key`
+- `source_label`
+
+Les anciens articles sont conservés comme articles validés.
+
+## Logique de calcul
+
+Mijoty additionne les besoins des recettes planifiées en tenant compte du nombre de portions, puis soustrait les quantités disponibles dans `inventory_items`. Les articles déjà validés dans la liste de courses sont également pris en compte pour éviter les doublons.
+
+Mijoty rapproche les unités courantes et convertit automatiquement **g ↔ kg** ainsi que **ml ↔ l** pour comparer correctement le besoin de la recette au stock. Les unités de type pièce/unité sont aussi normalisées.

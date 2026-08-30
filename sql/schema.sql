@@ -117,8 +117,15 @@ create table if not exists public.shopping_list_items (
   quantity numeric(10,2) default 1,
   unit text,
   estimated_price numeric(10,2),
-  checked boolean not null default false
+  checked boolean not null default false,
+  proposal_status text not null default 'accepted' check(proposal_status in ('pending','accepted','rejected')),
+  source_key text,
+  source_label text
 );
+
+create unique index if not exists shopping_list_items_source_key_uidx
+  on public.shopping_list_items(shopping_list_id, source_key)
+  where source_key is not null;
 
 create table if not exists public.food_preferences (
   id uuid primary key default gen_random_uuid(),
