@@ -67,3 +67,15 @@ La recherche de prix utilise le web search de l'API OpenAI limité au domaine `c
 5. Sur mobile, supprimer puis réinstaller le raccourci/PWA si l'ancienne icône reste en cache.
 
 > Note : Chronodrive ne fournit pas ici d'API publique de prix utilisée par Mijoty. La récupération gratuite repose sur les pages publiques du site et peut donc cesser de fonctionner si Chronodrive modifie son site ou bloque les requêtes automatisées.
+
+## V1.11 — Correctif icône mobile / PWA
+
+- Ajout d'un `manifest.webmanifest` explicite pour l'installation Android/PWA.
+- Icônes dédiées 192×192 et 512×512.
+- Icône Android `maskable` avec zone de sécurité.
+- `apple-touch-icon` 180×180 pour iPhone/iPad.
+- Favicon web dédié.
+- Métadonnées PWA injectées via `app/+html.tsx`.
+- Version affichée : v1.11.
+
+Après déploiement, supprimer l'ancien raccourci Mijoty du téléphone, fermer/réouvrir le navigateur puis recréer le raccourci. Android peut conserver l'ancienne icône en cache tant que l'ancien raccourci existe.
