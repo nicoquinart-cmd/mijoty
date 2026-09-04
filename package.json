@@ -1,6 +1,6 @@
 {
-  "name": "mijoty-v1-6",
-  "version": "1.6.0",
+  "name": "mijoty-v1-8",
+  "version": "1.8.0",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {

@@ -31,6 +31,35 @@ const store=lines.find(l=>/[A-Za-zÀ-ÿ]{3,}/.test(l)&&!looksLikeNoise(l)&&l.len
 export function bestProductNameFromText(text:string):string{const scored=text.split(/\r?\n/).map(cleanText).filter(Boolean).filter(l=>!looksLikeNoise(l)&&/[A-Za-zÀ-ÿ]{3,}/.test(l)).map(l=>{const c=stripPriceAndCodes(l).slice(0,70);const letters=(c.match(/[A-Za-zÀ-ÿ]/g)||[]).length;return {c,score:letters+(c===c.toUpperCase()?4:0)-Math.max(0,c.split(' ').length-5)*3}}).filter(x=>x.c.length>=3).sort((a,b)=>b.score-a.score);return scored[0]?.c||'Produit détecté'}
 export async function runOcr(uri:string,onProgress?:(p:number)=>void){const Tesseract=await import('tesseract.js');const r=await Tesseract.recognize(uri,'fra',{logger:m=>{if(m.status==='recognizing text'&&typeof m.progress==='number')onProgress?.(m.progress)}});return r.data.text||''}
 export async function detectBarcode(uri:string):Promise<string|null>{try{const {BrowserMultiFormatReader}=await import('@zxing/browser');const reader=new BrowserMultiFormatReader();const r=await reader.decodeFromImageUrl(uri);return r?.getText?.()||null}catch{return null}}
+
+function normalizeCatalogText(s:string){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
+function catalogTokens(s:string){return normalizeCatalogText(s).split(/\s+/).filter(t=>t.length>1&&!['de','du','des','la','le','les','et','au','aux','en','un','une','avec','sans'].includes(t))}
+function scoreCatalogProduct(query:string,p:any){
+  const q=new Set(catalogTokens(query));
+  const hay=catalogTokens(`${p?.product_name||''} ${p?.generic_name||''} ${p?.brands||''} ${p?.quantity||''}`);
+  let score=0;for(const t of hay)if(q.has(t))score+=t.length>=5?3:2;
+  const nq=normalizeCatalogText(query), name=normalizeCatalogText(p?.product_name||'');
+  if(name&&nq.includes(name))score+=8;
+  if((p?.brands||'')&&nq.includes(normalizeCatalogText(p.brands)))score+=5;
+  if((p?.quantity||'')&&nq.includes(normalizeCatalogText(p.quantity)))score+=4;
+  return score;
+}
+function productResult(p:any,source:string){const q=inferQuantity(p?.quantity||'');return {name:p?.product_name||p?.generic_name||'',brand:p?.brands||'',quantity:q.quantity,unit:q.unit,category:Array.isArray(p?.categories_tags)?String(p.categories_tags[0]||'').replace(/^..:/,''):'',imageUrl:p?.image_front_url||'',source}}
+
+export async function lookupProductByText(query:string){
+  const cleaned=cleanText(query).slice(0,120);if(cleaned.length<3)return null;
+  const fields='code,product_name,generic_name,brands,quantity,categories_tags,image_front_url';
+  try{
+    const url=`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(cleaned)}&search_simple=1&action=process&json=1&page_size=12&fields=${encodeURIComponent(fields)}`;
+    const r=await fetch(url);if(!r.ok)return null;const j=await r.json();
+    const products=Array.isArray(j?.products)?j.products.filter((p:any)=>p?.product_name||p?.generic_name):[];
+    if(!products.length)return null;
+    const ranked=products.map((p:any)=>({p,score:scoreCatalogProduct(cleaned,p)})).sort((a:any,b:any)=>b.score-a.score);
+    const best=ranked[0];if(!best||best.score<4)return null;
+    return {...productResult(best.p,'Open Food Facts (recherche texte)'),barcode:best.p?.code||undefined,matchScore:best.score};
+  }catch{return null}
+}
+
 export async function lookupBarcode(barcode:string){
   const code=barcode.replace(/\D/g,'');
   if(!code)return null;

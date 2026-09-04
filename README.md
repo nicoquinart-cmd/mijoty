@@ -23,3 +23,17 @@ Cette version améliore fortement l'entrée de stock par photo et ticket.
 Aucune migration SQL supplémentaire n'est nécessaire par rapport à V1.4. Remplacer le contenu du dépôt GitHub par cette version puis laisser Vercel redéployer.
 
 Les variables Supabase restent identiques.
+
+## V1.7
+- Recherche Open Food Facts par texte lorsque le code-barres n'est pas détecté ou n'existe pas dans le catalogue.
+- Meilleure reconnaissance des bouteilles et emballages réfléchissants/courbes.
+- La recherche texte utilise le nom OCR, la marque et la quantité comme signaux, avec validation utilisateur obligatoire.
+
+
+## V1.8 – Scanner code-barres en direct
+- Scanner caméra en direct (web/PWA) basé sur ZXing.
+- Caméra arrière privilégiée.
+- Recherche prioritaire dans le catalogue Mijoty, puis Open Food Facts.
+- Fiche produit à valider avant ajout au stock.
+- Saisie manuelle EAN/UPC de secours.
+- Le scan ticket reste disponible.

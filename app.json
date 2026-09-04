@@ -3,7 +3,7 @@
     "name": "Mijoty",
     "slug": "mijoty",
     "scheme": "mijoty",
-    "version": "1.6.0",
+    "version": "1.8.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "plugins": [
@@ -12,7 +12,7 @@
         "expo-image-picker",
         {
           "photosPermission": "Mijoty utilise vos photos pour lire un article ou un ticket de caisse.",
-          "cameraPermission": "Mijoty utilise la caméra pour photographier un article ou un ticket de caisse."
+          "cameraPermission": "Mijoty utilise la caméra pour scanner les codes-barres et photographier vos tickets de caisse."
         }
       ]
     ],
