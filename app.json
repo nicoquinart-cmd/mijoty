@@ -3,7 +3,7 @@
     "name": "Mijoty",
     "slug": "mijoty",
     "scheme": "mijoty",
-    "version": "1.4.0",
+    "version": "1.6.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "plugins": [

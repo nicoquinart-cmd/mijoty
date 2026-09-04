@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppModal, Field, ModalButton } from '@/components/Forms';
-import { Card, EmptyState, PrimaryButton } from '@/components/ui';
+import { AppHeader, Card, EmptyState, PrimaryButton } from '@/components/ui';
 import { useApp } from '@/context/AppContext';
 import { isoDate } from '@/lib/date';
 import { supabase } from '@/lib/supabase';
@@ -317,8 +317,7 @@ export default function Shopping() {
 
   return <SafeAreaView style={s.safe}>
     <ScrollView refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />} contentContainerStyle={s.c}>
-      <Text style={s.h}>Courses</Text>
-      <Text style={s.p}>Mijoty compare automatiquement tes recettes planifiées avec ton stock.</Text>
+      <AppHeader title="Courses" subtitle="Mijoty compare automatiquement tes recettes planifiées avec ton stock."/>
 
       <Card>
         <Text style={s.total}>Reste estimé : {total.toFixed(2)} €</Text>

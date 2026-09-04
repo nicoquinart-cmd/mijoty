@@ -3,7 +3,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'r
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { AppModal, Field, ModalButton } from '@/components/Forms';
-import { Card, EmptyState, PrimaryButton, SectionTitle } from '@/components/ui';
+import { AppHeader, Card, EmptyState, PrimaryButton, SectionTitle } from '@/components/ui';
 import { useApp } from '@/context/AppContext';
 import { isoDate } from '@/lib/date';
 import { supabase } from '@/lib/supabase';
@@ -231,7 +231,7 @@ export default function Meals() {
 
   return <SafeAreaView style={s.safe}>
     <ScrollView refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />} contentContainerStyle={s.c}>
-      <Text style={s.h}>Repas</Text>
+      <AppHeader title="Repas"/>
       <Text style={s.p}>Créez vos recettes avec ingrédients, quantités et préparation étape par étape.</Text>
       <View style={s.buttons}>
         <View style={{ flex: 1 }}><PrimaryButton label="Ajouter une recette" onPress={() => setCreateOpen(true)} /></View>
