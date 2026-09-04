@@ -79,3 +79,14 @@ La recherche de prix utilise le web search de l'API OpenAI limité au domaine `c
 - Version affichée : v1.11.
 
 Après déploiement, supprimer l'ancien raccourci Mijoty du téléphone, fermer/réouvrir le navigateur puis recréer le raccourci. Android peut conserver l'ancienne icône en cache tant que l'ancien raccourci existe.
+
+
+## V1.12 — Correctif icône Android renforcé
+
+- Ajout d’un vrai `/favicon.ico` à la racine publique, en plus du PNG.
+- Ajout des icônes PWA 192×192 et 512×512 directement à la racine publique.
+- `manifest.json` avec `id`, `start_url`, `scope`, icônes `any` et `maskable`.
+- Ajout des métadonnées `mobile-web-app-capable` et `shortcut icon`.
+- Ajout d’un service worker minimal afin que Chrome identifie correctement l’application comme PWA installable.
+- Ajout d’un suffixe de version sur les URLs d’icônes pour contourner le cache navigateur/CDN.
+- Version visible : v1.12.
