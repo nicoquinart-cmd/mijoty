@@ -37,3 +37,33 @@ Les variables Supabase restent identiques.
 - Fiche produit à valider avant ajout au stock.
 - Saisie manuelle EAN/UPC de secours.
 - Le scan ticket reste disponible.
+
+## V1.9 – Prix Chronodrive dans la liste de courses
+- À l'ajout manuel d'un article, Mijoty recherche automatiquement le produit correspondant sur Chronodrive.
+- Lorsqu'une proposition issue d'une recette est acceptée, son prix Chronodrive est également recherché.
+- Affichage du produit/format correspondant, du prix, du prix au kg/L quand disponible, de la date de vérification et d'un lien vers Chronodrive.
+- Le total estimé de la liste utilise le prix Chronodrive trouvé.
+- Si aucune correspondance suffisamment fiable n'est trouvée, Mijoty n'invente pas de prix et conserve un prix manuel éventuel.
+
+### Installation V1.9
+1. Exécuter `sql/v1.9_chronodrive_prices.sql` dans Supabase SQL Editor.
+3. Redéployer sur Vercel.
+
+La recherche de prix utilise le web search de l'API OpenAI limité au domaine `chronodrive.com`. Cela évite d'exposer la clé API dans l'application cliente et permet de vérifier les pages produits publiques au moment de l'ajout.
+
+
+## V1.10 – Sans API payante + icône mobile
+- Suppression complète de `OPENAI_API_KEY` et de l'appel OpenAI de la V1.9.
+- Recherche Chronodrive gratuite : Mijoty cherche des pages produit Chronodrive publiquement accessibles, lit leur prix et n'enregistre un prix que si la correspondance est suffisamment fiable.
+- En cas d'échec, l'article est ajouté avec « Prix Chronodrive non vérifié » : aucun prix n'est inventé.
+- Ajout du logo Mijoty comme icône Expo/PWA, icône Android adaptative et favicon web.
+- Version visible : v1.10.
+
+### Déploiement V1.10
+1. Remplacer le dépôt GitHub par cette version.
+2. Aucun `OPENAI_API_KEY` n'est nécessaire dans Vercel ; si vous l'aviez créée uniquement pour Mijoty, vous pouvez la supprimer.
+3. Si le SQL V1.9 n'a jamais été exécuté, exécuter `sql/v1.9_chronodrive_prices.sql` dans Supabase (les colonnes prix Chronodrive restent utilisées).
+4. Laisser Vercel redéployer.
+5. Sur mobile, supprimer puis réinstaller le raccourci/PWA si l'ancienne icône reste en cache.
+
+> Note : Chronodrive ne fournit pas ici d'API publique de prix utilisée par Mijoty. La récupération gratuite repose sur les pages publiques du site et peut donc cesser de fonctionner si Chronodrive modifie son site ou bloque les requêtes automatisées.

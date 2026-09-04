@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppModal, Field, ModalButton } from '@/components/Forms';
 import { AppHeader, Card, EmptyState, PrimaryButton } from '@/components/ui';
 import { useApp } from '@/context/AppContext';
 import { isoDate } from '@/lib/date';
+import { findChronodrivePrice } from '@/lib/chronodrive';
 import { supabase } from '@/lib/supabase';
 import { colors } from '@/lib/theme';
 
@@ -18,6 +19,14 @@ type Item = {
   proposal_status: 'pending' | 'accepted' | 'rejected';
   source_key: string | null;
   source_label: string | null;
+  retailer_name: string | null;
+  retailer_product_name: string | null;
+  retailer_package: string | null;
+  retailer_price: number | null;
+  retailer_price_per_unit: string | null;
+  retailer_url: string | null;
+  retailer_confidence: number | null;
+  retailer_checked_at: string | null;
 };
 
 type Need = {
@@ -64,6 +73,8 @@ export default function Shopping() {
   const [qty, setQty] = useState('1');
   const [unit, setUnit] = useState('');
   const [price, setPrice] = useState('');
+  const [priceChecking, setPriceChecking] = useState(false);
+  const [priceMessage, setPriceMessage] = useState('');
 
   const ensureList = useCallback(async () => {
     if (!householdId) return null;
@@ -90,7 +101,7 @@ export default function Shopping() {
   const fetchItems = useCallback(async (id: string) => {
     const { data, error } = await supabase
       .from('shopping_list_items')
-      .select('id,item_name,quantity,unit,estimated_price,checked,proposal_status,source_key,source_label')
+      .select('id,item_name,quantity,unit,estimated_price,checked,proposal_status,source_key,source_label,retailer_name,retailer_product_name,retailer_package,retailer_price,retailer_price_per_unit,retailer_url,retailer_confidence,retailer_checked_at')
       .eq('shopping_list_id', id)
       .order('checked', { ascending: true });
     if (error) throw error;
@@ -255,19 +266,45 @@ export default function Shopping() {
 
   useEffect(() => { load(); }, [load]);
 
+  async function lookupPrice(itemName: string, quantityValue: number, unitValue?: string | null) {
+    try {
+      return await findChronodrivePrice({ name: itemName, quantity: quantityValue, unit: unitValue || null });
+    } catch (e: any) {
+      console.error(e);
+      return { found: false, note: e?.message || 'Prix Chronodrive non trouvé' };
+    }
+  }
+
   async function add() {
     if (!listId || !name.trim()) return;
+    const quantityValue = Number(qty) || 1;
+    setPriceChecking(true);
+    setPriceMessage('Recherche du prix chez Chronodrive…');
+    const match = await lookupPrice(name.trim(), quantityValue, unit || null);
+    const chronodrivePrice = match.found && match.price != null ? Number(match.price) : null;
+    const effectivePrice = chronodrivePrice ?? (price ? Number(price) : null);
+
     const { error } = await supabase.from('shopping_list_items').insert({
       shopping_list_id: listId,
       item_name: name.trim(),
-      quantity: Number(qty) || 1,
+      quantity: quantityValue,
       unit: unit || null,
-      estimated_price: price ? Number(price) : null,
+      estimated_price: effectivePrice,
       checked: false,
       proposal_status: 'accepted',
+      retailer_name: match.found ? 'Chronodrive' : null,
+      retailer_product_name: match.found ? match.productName || name.trim() : null,
+      retailer_package: match.found ? match.packageText || null : null,
+      retailer_price: chronodrivePrice,
+      retailer_price_per_unit: match.found ? match.pricePerUnit || null : null,
+      retailer_url: match.found ? match.url || null : null,
+      retailer_confidence: match.found ? match.confidence ?? null : null,
+      retailer_checked_at: match.found ? match.checkedAt || new Date().toISOString() : null,
     });
+    setPriceChecking(false);
     if (error) alert(error.message);
     else {
+      setPriceMessage(match.found ? `Trouvé chez Chronodrive : ${chronodrivePrice?.toFixed(2)} €` : 'Prix Chronodrive non trouvé — article ajouté sans prix vérifié.');
       setName(''); setQty('1'); setUnit(''); setPrice(''); setModal(false);
       await fetchItems(listId);
     }
@@ -281,12 +318,29 @@ export default function Shopping() {
   }
 
   async function decide(item: Item, status: 'accepted' | 'rejected') {
+    let extra: Record<string, any> = {};
+    if (status === 'accepted') {
+      const match = await lookupPrice(item.item_name, Number(item.quantity || 1), item.unit);
+      if (match.found && match.price != null) {
+        extra = {
+          estimated_price: Number(match.price),
+          retailer_name: 'Chronodrive',
+          retailer_product_name: match.productName || item.item_name,
+          retailer_package: match.packageText || null,
+          retailer_price: Number(match.price),
+          retailer_price_per_unit: match.pricePerUnit || null,
+          retailer_url: match.url || null,
+          retailer_confidence: match.confidence ?? null,
+          retailer_checked_at: match.checkedAt || new Date().toISOString(),
+        };
+      }
+    }
     const { error } = await supabase
       .from('shopping_list_items')
-      .update({ proposal_status: status, checked: false })
+      .update({ proposal_status: status, checked: false, ...extra })
       .eq('id', item.id);
     if (error) alert(error.message);
-    else setItems(v => v.map(x => x.id === item.id ? { ...x, proposal_status: status } : x));
+    else await fetchItems(listId!);
   }
 
   async function reconsiderRejected() {
@@ -317,10 +371,11 @@ export default function Shopping() {
 
   return <SafeAreaView style={s.safe}>
     <ScrollView refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />} contentContainerStyle={s.c}>
-      <AppHeader title="Courses" subtitle="Mijoty compare automatiquement tes recettes planifiées avec ton stock."/>
+      <AppHeader title="Courses" subtitle="Mijoty compare tes recettes avec ton stock et vérifie les prix chez Chronodrive."/>
 
       <Card>
         <Text style={s.total}>Reste estimé : {total.toFixed(2)} €</Text>
+        <Text style={s.small}>Prix Chronodrive quand une correspondance fiable est trouvée.</Text>
         <Text style={s.small}>{accepted.filter(x => x.checked).length} article(s) coché(s) sur {accepted.length}</Text>
         {rejectedCount > 0 && <Text style={s.small}>{rejectedCount} proposition(s) refusée(s)</Text>}
       </Card>
@@ -360,6 +415,13 @@ export default function Shopping() {
               <Text style={s.name}>{item.item_name}</Text>
               <Text style={s.small}>{Number(item.quantity || 1)} {item.unit || ''}</Text>
               {item.source_key && <Text style={s.auto}>Ajouté depuis une recette</Text>}
+              {item.retailer_name === 'Chronodrive' && <View style={s.chronoBox}>
+                <Text style={s.chrono}>Chronodrive · {item.retailer_product_name || item.item_name}{item.retailer_package ? ` · ${item.retailer_package}` : ''}</Text>
+                {!!item.retailer_price_per_unit && <Text style={s.chronoSub}>{item.retailer_price_per_unit}</Text>}
+                {!!item.retailer_checked_at && <Text style={s.chronoSub}>Prix vérifié le {new Date(item.retailer_checked_at).toLocaleDateString('fr-FR')}</Text>}
+                {!!item.retailer_url && <Pressable onPress={(e) => { e.stopPropagation?.(); Linking.openURL(item.retailer_url!); }}><Text style={s.chronoLink}>Voir chez Chronodrive</Text></Pressable>}
+              </View>}
+              {item.retailer_name !== 'Chronodrive' && <Text style={s.notFound}>Prix Chronodrive non vérifié</Text>}
             </View>
             <Text style={s.price}>{item.estimated_price != null ? `${Number(item.estimated_price).toFixed(2)} €` : '—'}</Text>
           </View>
@@ -373,8 +435,10 @@ export default function Shopping() {
       <Field label="Article" value={name} onChangeText={setName} />
       <Field label="Quantité" value={qty} onChangeText={setQty} keyboardType="decimal-pad" />
       <Field label="Unité" value={unit} onChangeText={setUnit} />
-      <Field label="Prix estimé (€)" value={price} onChangeText={setPrice} keyboardType="decimal-pad" />
-      <ModalButton label="Ajouter à la liste" onPress={add} />
+      <Text style={s.lookupHelp}>Mijoty vérifiera automatiquement le prix actuel chez Chronodrive avant l'ajout.</Text>
+      <Field label="Prix manuel de secours (€)" value={price} onChangeText={setPrice} keyboardType="decimal-pad" />
+      {!!priceMessage && <Text style={s.lookupStatus}>{priceMessage}</Text>}
+      <ModalButton label={priceChecking ? "Recherche Chronodrive…" : "Ajouter à la liste"} onPress={add} />
     </AppModal>
   </SafeAreaView>;
 }
@@ -400,6 +464,13 @@ const s = StyleSheet.create({
   source: { color: colors.muted, fontSize: 12, marginTop: 6, lineHeight: 17 },
   auto: { color: colors.sage, fontSize: 11, fontWeight: '800', marginTop: 4 },
   price: { fontWeight: '900', color: colors.brown },
+  chronoBox: { marginTop: 6 },
+  chrono: { color: colors.sage, fontSize: 11, fontWeight: '900' },
+  chronoSub: { color: colors.muted, fontSize: 10, marginTop: 2 },
+  chronoLink: { color: colors.terracotta, fontSize: 11, fontWeight: '800', marginTop: 4 },
+  notFound: { color: colors.muted, fontSize: 10, marginTop: 5, fontStyle: 'italic' },
+  lookupHelp: { color: colors.muted, fontSize: 12, lineHeight: 18, marginBottom: 8 },
+  lookupStatus: { color: colors.terracotta, fontWeight: '700', fontSize: 12, marginVertical: 6 },
   decisionRow: { flexDirection: 'row', gap: 10, marginTop: 14 },
   decision: { flex: 1, borderRadius: 12, paddingVertical: 11, alignItems: 'center', borderWidth: 1 },
   reject: { borderColor: colors.border, backgroundColor: colors.white },

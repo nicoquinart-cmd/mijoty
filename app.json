@@ -3,7 +3,7 @@
     "name": "Mijoty",
     "slug": "mijoty",
     "scheme": "mijoty",
-    "version": "1.8.0",
+    "version": "1.10.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "plugins": [
@@ -24,11 +24,14 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#FFF9F2"
+        "backgroundColor": "#FFF9F2",
+        "foregroundImage": "./assets/adaptive-icon.png"
       }
     },
     "web": {
-      "bundler": "metro"
-    }
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    },
+    "icon": "./assets/icon.png"
   }
 }
